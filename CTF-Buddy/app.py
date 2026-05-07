@@ -17,7 +17,7 @@ Your goal is to help the user solve CTF challenges (Web, Pwn, Reversing, Crypto,
 - Use markdown for code blocks.
 """
 
-genai.configure(api_key="AIzaSyDo253BQuodX1uLVmGWhznxWlV3TQ_jpKQ")
+genai.configure(api_key="Gemini_API_Key")
 
 
 model = genai.GenerativeModel(
@@ -25,8 +25,6 @@ model = genai.GenerativeModel(
     system_instruction=instructions
 )
 
-#genai.configure(api_key="AIzaSyDo253BQuodX1uLVmGWhznxWlV3TQ_jpKQ")
-#model = genai.GenerativeModel('gemini-2.5-flash')
 
 @app.route('/')
 def index():
