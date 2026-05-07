@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>CTF Buddy</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg: #0b0d0f;
+            --panel: rgba(17, 20, 18, 0.88);
+            --panel-solid: #121614;
+            --border: rgba(255,255,255,0.06);
+
+            --accent: #00ff88;
+            --accent-soft: rgba(0,255,136,0.12);
+            --accent-glow: rgba(0,255,136,0.18);
+
+            --text: #f5f7fa;
+            --muted: #8a9391;
+
+            --shadow:
+                0 30px 80px rgba(0,0,0,0.55),
+                0 0 80px rgba(0,255,136,0.05);
+        }
+
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+        }
+
+        html,body{
+            width:100%;
+            height:100%;
+            overflow:hidden;
+            background:var(--bg);
+            font-family:'Inter',sans-serif;
+            color:var(--text);
+        }
+
+        body::before{
+            content:"";
+            position:fixed;
+            inset:0;
+            background:
+                radial-gradient(circle at top left, rgba(0,255,136,0.08), transparent 28%),
+                radial-gradient(circle at bottom right, rgba(0,255,136,0.05), transparent 22%);
+            z-index:-3;
+        }
+
+        /* Animated Grid */
+        .grid{
+            position:fixed;
+            inset:0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size:40px 40px;
+            mask-image: radial-gradient(circle at center, black 30%, transparent 90%);
+            animation:gridMove 25s linear infinite;
+            z-index:-2;
+        }
+
+        @keyframes gridMove{
+            from{
+                transform:translateY(0);
+            }
+            to{
+                transform:translateY(40px);
+            }
+        }
+
+        /* Floating glow */
+        .orb{
+            position:fixed;
+            width:350px;
+            height:350px;
+            border-radius:50%;
+            background:radial-gradient(circle, rgba(0,255,136,0.12), transparent 70%);
+            filter:blur(20px);
+            z-index:-1;
+            animation:float 10s ease-in-out infinite;
+        }
+
+        .orb.one{
+            top:-100px;
+            left:-80px;
+        }
+
+        .orb.two{
+            right:-120px;
+            bottom:-100px;
+            animation-delay:4s;
+        }
+
+        @keyframes float{
+            0%,100%{
+                transform:translateY(0px);
+            }
+            50%{
+                transform:translateY(25px);
+            }
+        }
+
+        .app{
+            width:100%;
+            height:100vh;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            padding:24px;
+        }
+
+        .window{
+            width:100%;
+            max-width:1020px;
+            height:90vh;
+
+            background:var(--panel);
+            backdrop-filter:blur(22px);
+
+            border:1px solid var(--border);
+            border-radius:28px;
+
+            overflow:hidden;
+            display:flex;
+            flex-direction:column;
+
+            box-shadow:var(--shadow);
+
+            position:relative;
+        }
+
+        .window::before{
+            content:"";
+            position:absolute;
+            inset:0;
+            border-radius:28px;
+            padding:1px;
+            background:linear-gradient(
+                135deg,
+                rgba(0,255,136,0.18),
+                transparent,
+                rgba(255,255,255,0.03)
+            );
+            -webkit-mask:
+                linear-gradient(#fff 0 0) content-box,
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite:xor;
+            pointer-events:none;
+        }
+
+        header{
+            height:78px;
+            padding:0 28px;
+            border-bottom:1px solid var(--border);
+
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+
+            background:rgba(255,255,255,0.02);
+        }
+
+        .brand-wrap{
+            display:flex;
+            align-items:center;
+            gap:15px;
+        }
+
+        .logo{
+            width:44px;
+            height:44px;
+            border-radius:14px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #00ff88,
+                    #00cc6a
+                );
+
+            display:flex;
+            align-items:center;
+            justify-content:center;
+
+            color:#06110b;
+            font-weight:800;
+            font-size:14px;
+
+            box-shadow:
+                0 0 20px rgba(0,255,136,0.35);
+        }
+
+        .brand h1{
+            font-size:15px;
+            font-weight:600;
+        }
+
+        .brand span{
+            font-size:12px;
+            color:var(--muted);
+        }
+
+        .top-right{
+            display:flex;
+            align-items:center;
+            gap:12px;
+        }
+
+        .badge{
+            padding:8px 12px;
+            border-radius:999px;
+
+            background:rgba(255,255,255,0.03);
+            border:1px solid var(--border);
+
+            font-size:12px;
+            color:var(--muted);
+        }
+
+        .status{
+            display:flex;
+            align-items:center;
+            gap:8px;
+        }
+
+        .dot{
+            width:8px;
+            height:8px;
+            border-radius:50%;
+            background:var(--accent);
+
+            box-shadow:0 0 12px var(--accent);
+        }
+
+        #chat-flow{
+            flex:1;
+            overflow-y:auto;
+
+            padding:30px;
+
+            display:flex;
+            flex-direction:column;
+            gap:24px;
+
+            scroll-behavior:smooth;
+        }
+
+        #chat-flow::-webkit-scrollbar{
+            width:6px;
+        }
+
+        #chat-flow::-webkit-scrollbar-thumb{
+            background:rgba(255,255,255,0.08);
+            border-radius:10px;
+        }
+
+        .msg{
+            max-width:78%;
+            display:flex;
+            flex-direction:column;
+
+            animation:fadeUp .28s ease;
+        }
+
+        .msg.user{
+            align-self:flex-end;
+            align-items:flex-end;
+        }
+
+        .meta{
+            font-size:12px;
+            color:var(--muted);
+            margin-bottom:8px;
+        }
+
+        .bubble{
+            padding:16px 18px;
+            border-radius:20px;
+
+            line-height:1.7;
+            font-size:15px;
+
+            position:relative;
+            overflow:hidden;
+        }
+
+        .bubble::before{
+            content:"";
+            position:absolute;
+            inset:0;
+            opacity:0;
+            transition:.3s;
+            background:linear-gradient(
+                120deg,
+                transparent,
+                rgba(255,255,255,0.03),
+                transparent
+            );
+        }
+
+        .bubble:hover::before{
+            opacity:1;
+        }
+
+        .bot-bubble{
+            background:rgba(255,255,255,0.035);
+            border:1px solid var(--border);
+        }
+
+        .user-bubble{
+            background:linear-gradient(
+                135deg,
+                rgba(0,255,136,0.18),
+                rgba(0,255,136,0.1)
+            );
+
+            border:1px solid rgba(0,255,136,0.18);
+
+            color:#dffff1;
+        }
+
+        pre{
+            margin-top:14px;
+            padding:16px;
+
+            border-radius:16px;
+
+            background:#0a0d0b;
+            border:1px solid rgba(255,255,255,0.05);
+
+            overflow-x:auto;
+        }
+
+        code{
+            font-family:'JetBrains Mono', monospace;
+            font-size:13px;
+            color:#c9ffe6;
+        }
+
+        /* Typing */
+        .typing{
+            display:flex;
+            gap:5px;
+            padding:2px 0;
+        }
+
+        .typing span{
+            width:7px;
+            height:7px;
+            border-radius:50%;
+            background:var(--accent);
+
+            animation:bounce 1s infinite ease-in-out;
+        }
+
+        .typing span:nth-child(2){
+            animation-delay:.15s;
+        }
+
+        .typing span:nth-child(3){
+            animation-delay:.3s;
+        }
+
+        @keyframes bounce{
+            0%,80%,100%{
+                transform:scale(.7);
+                opacity:.5;
+            }
+            40%{
+                transform:scale(1.1);
+                opacity:1;
+            }
+        }
+
+        /* Input */
+        .input-section{
+            padding:22px 26px;
+            border-top:1px solid var(--border);
+
+            background:rgba(255,255,255,0.02);
+        }
+
+        .input-box{
+            display:flex;
+            align-items:center;
+            gap:14px;
+
+            background:var(--panel-solid);
+
+            border:1px solid rgba(255,255,255,0.05);
+            border-radius:20px;
+
+            padding:14px 16px;
+
+            transition:.25s ease;
+        }
+
+        .input-box:focus-within{
+            border-color:rgba(0,255,136,0.28);
+
+            box-shadow:
+                0 0 0 4px rgba(0,255,136,0.08),
+                0 0 30px rgba(0,255,136,0.08);
+        }
+
+        #userInput{
+            flex:1;
+
+            border:none;
+            outline:none;
+            background:transparent;
+
+            color:white;
+
+            font-size:15px;
+            font-family:inherit;
+        }
+
+        #userInput::placeholder{
+            color:#66706c;
+        }
+
+        .send-btn{
+            width:46px;
+            height:46px;
+
+            border:none;
+            border-radius:14px;
+
+            background:linear-gradient(
+                135deg,
+                #00ff88,
+                #00cc6a
+            );
+
+            color:#04100a;
+            font-size:18px;
+            font-weight:700;
+
+            cursor:pointer;
+
+            transition:.2s ease;
+
+            box-shadow:
+                0 10px 25px rgba(0,255,136,0.18);
+        }
+
+        .send-btn:hover{
+            transform:translateY(-2px) scale(1.03);
+
+            box-shadow:
+                0 14px 35px rgba(0,255,136,0.28);
+        }
+
+        .send-btn:active{
+            transform:scale(.96);
+        }
+
+        .send-btn:disabled{
+            opacity:.7;
+            cursor:not-allowed;
+        }
+
+        @keyframes fadeUp{
+            from{
+                opacity:0;
+                transform:translateY(8px);
+            }
+            to{
+                opacity:1;
+                transform:translateY(0);
+            }
+        }
+
+        @media(max-width:768px){
+
+            .window{
+                height:100vh;
+                border-radius:0;
+            }
+
+            .msg{
+                max-width:92%;
+            }
+
+            header{
+                padding:0 18px;
+            }
+
+            #chat-flow{
+                padding:20px;
+            }
+
+            .input-section{
+                padding:16px;
+            }
+
+            .badge{
+                display:none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="grid"></div>
+
+    <div class="orb one"></div>
+    <div class="orb two"></div>
+
+    <div class="app">
+
+        <div class="window">
+
+            <header>
+
+                <div class="brand-wrap">
+
+                    <div class="logo">
+                        CB
+                    </div>
+
+                    <div class="brand">
+                        <h1>CTF Buddy</h1>
+                        <span>Cybersecurity Learning Assistant</span>
+                    </div>
+
+                </div>
+
+                <div class="top-right">
+
+                    <div class="badge">
+                        Beginner Friendly
+                    </div>
+
+                    <div class="status">
+                        <div class="dot"></div>
+                        <span style="font-size:13px;color:var(--muted);">
+                            Online
+                        </span>
+                    </div>
+
+                </div>
+
+            </header>
+
+            <div id="chat-flow">
+
+                <div class="msg bot">
+
+                    <span class="meta">
+                        CTF Buddy
+                    </span>
+
+                    <div class="bubble bot-bubble">
+                        Welcome back. Ask anything about CTFs, Linux, networking, scripting, reverse engineering, or cybersecurity concepts.
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="input-section">
+
+                <div class="input-box">
+
+                    <input
+                        type="text"
+                        id="userInput"
+                        placeholder="Ask something..."
+                        autocomplete="off"
+                    >
+
+                    <button class="send-btn" id="sendBtn">
+                        ↑
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+
+        const flow = document.getElementById('chat-flow');
+        const input = document.getElementById('userInput');
+        const btn = document.getElementById('sendBtn');
+
+        async function process(){
+
+            const val = input.value.trim();
+
+            if(!val) return;
+
+            addMsg('user', val);
+
+            input.value = '';
+
+            setLoading(true);
+
+            const typing = addTyping();
+
+            try{
+
+                const res = await fetch(
+                    'http://127.0.0.1:5000/chat',
+                    {
+                        method:'POST',
+
+                        headers:{
+                            'Content-Type':'application/json'
+                        },
+
+                        body:JSON.stringify({
+                            message:val
+                        })
+                    }
+                );
+
+                const data = await res.json();
+
+                typing.remove();
+
+                addMsg(
+                    'bot',
+                    data.reply || 'No response received.'
+                );
+
+            }catch(err){
+
+                typing.remove();
+
+                addMsg(
+                    'bot',
+                    'Unable to connect to backend server.'
+                );
+
+            }finally{
+
+                setLoading(false);
+            }
+        }
+
+        function addMsg(type, text){
+
+            const div = document.createElement('div');
+
+            div.className = `msg ${type}`;
+
+            const formatted = text.replace(
+                /```([\s\S]*?)```/g,
+                '<pre><code>$1</code></pre>'
+            );
+
+            div.innerHTML = `
+                <span class="meta">
+                    ${type === 'user' ? 'You' : 'CTF Buddy'}
+                </span>
+
+                <div class="bubble ${type}-bubble">
+                    ${formatted}
+                </div>
+            `;
+
+            flow.appendChild(div);
+
+            flow.scrollTop = flow.scrollHeight;
+        }
+
+        function addTyping(){
+
+            const div = document.createElement('div');
+
+            div.className = 'msg bot';
+
+            div.innerHTML = `
+                <span class="meta">
+                    CTF Buddy
+                </span>
+
+                <div class="bubble bot-bubble">
+                    <div class="typing">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            `;
+
+            flow.appendChild(div);
+
+            flow.scrollTop = flow.scrollHeight;
+
+            return div;
+        }
+
+        function setLoading(state){
+
+            btn.disabled = state;
+            input.disabled = state;
+
+            btn.innerHTML = state ? '...' : '↑';
+
+            if(!state){
+                input.focus();
+            }
+        }
+
+        btn.addEventListener(
+            'click',
+            process
+        );
+
+        input.addEventListener(
+            'keypress',
+            (e)=>{
+                if(e.key === 'Enter'){
+                    process();
+                }
+            }
+        );
+
+    </script>
+
+</body>
+</html>
